@@ -1,0 +1,14 @@
+Source: go-cassandra
+Section: devel
+Priority: extra
+Maintainer: Caoimhe Chaos <caoimhechaos@protonmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://cassandra.apache.org/
+Vcs-Git: http://git.ancient-solutions.com/golang/cassandra.git
+Vcs-Browser: http://git.ancient-solutions.com/?p=golang/cassandra.git;a=summary
+
+Package: go-cassandra
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Cassandra client for Go
