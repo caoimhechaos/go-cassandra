@@ -1,4 +1,4 @@
-go-cassandra (0.0.2-1) unstable; urgency=low
+go-thriftlib-cassandra (0.0.2-1) unstable; urgency=low
 
   * Initial release
 

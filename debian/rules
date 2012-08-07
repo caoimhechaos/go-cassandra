@@ -27,7 +27,7 @@ build-stamp: configure-stamp
 	dh_testdir
 
 	# Add here commands to compile the package.
-	scons DESTDIR=$(CURDIR)/debian/go-cassandra
+	scons DESTDIR=$(CURDIR)/debian/go-thriftlib-cassandra
 
 	touch $@
 
@@ -37,7 +37,7 @@ clean:
 	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
-	scons DESTDIR=$(CURDIR)/debian/go-cassandra -c
+	scons DESTDIR=$(CURDIR)/debian/go-thriftlib-cassandra -c
 
 	dh_clean 
 
@@ -47,8 +47,8 @@ install: build
 	dh_prep  
 	dh_installdirs
 
-	# Add here commands to install the package into debian/go-cassandra.
-	scons DESTDIR=$(CURDIR)/debian/go-cassandra install
+	# Add here commands to install the package into debian/go-thriftlib-cassandra.
+	scons DESTDIR=$(CURDIR)/debian/go-thriftlib-cassandra install
 
 
 # Build architecture-independent files here.

@@ -1,4 +1,4 @@
-Source: go-cassandra
+Source: go-thriftlib-cassandra
 Section: devel
 Priority: extra
 Maintainer: Caoimhe Chaos <caoimhechaos@protonmail.com>
@@ -8,7 +8,7 @@ Homepage: http://cassandra.apache.org/
 Vcs-Git: http://git.ancient-solutions.com/golang/cassandra.git
 Vcs-Browser: http://git.ancient-solutions.com/?p=golang/cassandra.git;a=summary
 
-Package: go-cassandra
+Package: go-thriftlib-cassandra
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Cassandra client for Go
