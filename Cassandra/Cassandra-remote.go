@@ -7,48 +7,46 @@ package main
 import (
 	"flag"
 	"fmt"
-	"http"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"thrift"
+	"thriftlib/Cassandra"
 )
 
 func Usage() {
 	fmt.Fprint(os.Stderr, "Usage of ", os.Args[0], " [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:\n")
 	flag.PrintDefaults()
 	fmt.Fprint(os.Stderr, "Functions:\n")
-	fmt.Fprint(os.Stderr, "  login(auth_request *AuthenticationRequest) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  set_keyspace(keyspace string) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  get(key string, column_path *ColumnPath, consistency_level ConsistencyLevel) (retval1094 *ColumnOrSuperColumn, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  get_slice(key string, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval1095 thrift.TList, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  get_count(key string, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval1096 int32, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  multiget_slice(keys thrift.TList, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval1097 thrift.TMap, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  multiget_count(keys thrift.TList, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval1098 thrift.TMap, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  get_range_slices(column_parent *ColumnParent, predicate *SlicePredicate, range_a1 *KeyRange, consistency_level ConsistencyLevel) (retval1099 thrift.TList, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  get_indexed_slices(column_parent *ColumnParent, index_clause *IndexClause, column_predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval1100 thrift.TList, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  insert(key string, column_parent *ColumnParent, column *Column, consistency_level ConsistencyLevel) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  add(key string, column_parent *ColumnParent, column *CounterColumn, consistency_level ConsistencyLevel) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  remove(key string, column_path *ColumnPath, timestamp int64, consistency_level ConsistencyLevel) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  remove_counter(key string, path *ColumnPath, consistency_level ConsistencyLevel) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  batch_mutate(mutation_map thrift.TMap, consistency_level ConsistencyLevel) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  truncate(cfname string) (err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_schema_versions() (retval1107 thrift.TMap, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_keyspaces() (retval1108 thrift.TList, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_cluster_name() (retval1109 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_version() (retval1110 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_ring(keyspace string) (retval1111 thrift.TList, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_partitioner() (retval1112 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_snitch() (retval1113 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_keyspace(keyspace string) (retval1114 *KsDef, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  describe_splits(cfName string, start_token string, end_token string, keys_per_split int32) (retval1115 thrift.TList, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  system_add_column_family(cf_def *CfDef) (retval1116 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  system_drop_column_family(column_family string) (retval1117 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  system_add_keyspace(ks_def *KsDef) (retval1118 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  system_drop_keyspace(keyspace string) (retval1119 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  system_update_keyspace(ks_def *KsDef) (retval1120 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  system_update_column_family(cf_def *CfDef) (retval1121 string, err os.Error)\n")
-	fmt.Fprint(os.Stderr, "  execute_cql_query(query string, compression Compression) (retval1122 *CqlResult, err os.Error)\n")
+	fmt.Fprint(os.Stderr, "  login(auth_request *AuthenticationRequest) (authnx *AuthenticationException, authzx *AuthorizationException, err error)\n")
+	fmt.Fprint(os.Stderr, "  set_keyspace(keyspace string) (ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  get(key []byte, column_path *ColumnPath, consistency_level ConsistencyLevel) (retval932 *ColumnOrSuperColumn, ire *InvalidRequestException, nfe *NotFoundException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  get_slice(key []byte, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval933 thrift.TList, ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  get_count(key []byte, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval934 int32, ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  multiget_slice(keys thrift.TList, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval935 thrift.TMap, ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  multiget_count(keys thrift.TList, column_parent *ColumnParent, predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval936 thrift.TMap, ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  get_range_slices(column_parent *ColumnParent, predicate *SlicePredicate, keyrange *KeyRange, consistency_level ConsistencyLevel) (retval937 thrift.TList, ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  get_indexed_slices(column_parent *ColumnParent, index_clause *IndexClause, column_predicate *SlicePredicate, consistency_level ConsistencyLevel) (retval938 thrift.TList, ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  insert(key []byte, column_parent *ColumnParent, column *Column, consistency_level ConsistencyLevel) (ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  remove(key []byte, column_path *ColumnPath, timestamp int64, consistency_level ConsistencyLevel) (ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  batch_mutate(mutation_map thrift.TMap, consistency_level ConsistencyLevel) (ire *InvalidRequestException, ue *UnavailableException, te *TimedOutException, err error)\n")
+	fmt.Fprint(os.Stderr, "  truncate(cfname string) (ire *InvalidRequestException, ue *UnavailableException, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_schema_versions() (retval943 thrift.TMap, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_keyspaces() (retval944 thrift.TList, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_cluster_name() (retval945 string, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_version() (retval946 string, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_ring(keyspace string) (retval947 thrift.TList, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_partitioner() (retval948 string, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_snitch() (retval949 string, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_keyspace(keyspace string) (retval950 *KsDef, nfe *NotFoundException, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  describe_splits(cfName string, start_token string, end_token string, keys_per_split int32) (retval951 thrift.TList, err error)\n")
+	fmt.Fprint(os.Stderr, "  system_add_column_family(cf_def *CfDef) (retval952 string, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  system_drop_column_family(column_family string) (retval953 string, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  system_add_keyspace(ks_def *KsDef) (retval954 string, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  system_drop_keyspace(keyspace string) (retval955 string, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  system_update_keyspace(ks_def *KsDef) (retval956 string, ire *InvalidRequestException, err error)\n")
+	fmt.Fprint(os.Stderr, "  system_update_column_family(cf_def *CfDef) (retval957 string, ire *InvalidRequestException, err error)\n")
 	fmt.Fprint(os.Stderr, "\n")
 	os.Exit(0)
 }
@@ -62,7 +60,7 @@ func main() {
 	var framed bool
 	var useHttp bool
 	var help bool
-	var url http.URL
+	var parsedUrl url.URL
 	var trans thrift.TTransport
 	flag.Usage = Usage
 	flag.StringVar(&host, "h", "localhost", "Specify host and port")
@@ -78,29 +76,29 @@ func main() {
 	}
 
 	if len(urlString) > 0 {
-		url, err := http.ParseURL(urlString)
+		parsedUrl, err := url.Parse(urlString)
 		if err != nil {
-			fmt.Fprint(os.Stderr, "Error parsing URL: ", err.String(), "\n")
+			fmt.Fprint(os.Stderr, "Error parsing URL: ", err.Error(), "\n")
 			flag.Usage()
 		}
-		host = url.Host
-		useHttp = len(url.Scheme) <= 0 || url.Scheme == "http"
+		host = parsedUrl.Host
+		useHttp = len(parsedUrl.Scheme) <= 0 || parsedUrl.Scheme == "http"
 	} else if useHttp {
-		_, err := http.ParseURL(fmt.Sprint("http://", host, ":", port))
+		_, err := url.Parse(fmt.Sprint("http://", host, ":", port))
 		if err != nil {
-			fmt.Fprint(os.Stderr, "Error parsing URL: ", err.String(), "\n")
+			fmt.Fprint(os.Stderr, "Error parsing URL: ", err.Error(), "\n")
 			flag.Usage()
 		}
 	}
 
 	cmd := flag.Arg(0)
-	var err os.Error
+	var err error
 	if useHttp {
-		trans, err = thrift.NewTHttpClient(url.Raw)
+		trans, err = thrift.NewTHttpClient(parsedUrl.String())
 	} else {
 		addr, err := net.ResolveTCPAddr("tcp", fmt.Sprint(host, ":", port))
 		if err != nil {
-			fmt.Fprint(os.Stderr, "Error resolving address", err.String())
+			fmt.Fprint(os.Stderr, "Error resolving address", err.Error())
 			os.Exit(1)
 		}
 		trans, err = thrift.NewTNonblockingSocketAddr(addr)
@@ -109,7 +107,7 @@ func main() {
 		}
 	}
 	if err != nil {
-		fmt.Fprint(os.Stderr, "Error creating transport", err.String())
+		fmt.Fprint(os.Stderr, "Error creating transport", err.Error())
 		os.Exit(1)
 	}
 	defer trans.Close()
@@ -132,9 +130,9 @@ func main() {
 		Usage()
 		os.Exit(1)
 	}
-	client := cassandra.NewCassandraClientFactory(trans, protocolFactory)
+	client := Cassandra.NewCassandraClientFactory(trans, protocolFactory)
 	if err = trans.Open(); err != nil {
-		fmt.Fprint(os.Stderr, "Error opening socket to ", host, ":", port, " ", err.String())
+		fmt.Fprint(os.Stderr, "Error opening socket to ", host, ":", port, " ", err.Error())
 		os.Exit(1)
 	}
 
@@ -144,19 +142,19 @@ func main() {
 			fmt.Fprint(os.Stderr, "Login requires 1 args\n")
 			flag.Usage()
 		}
-		arg1123 := flag.Arg(1)
-		mbTrans1124 := thrift.NewTMemoryBufferLen(len(arg1123))
-		defer mbTrans1124.Close()
-		_, err1125 := mbTrans1124.WriteString(arg1123)
-		if err1125 != nil {
+		arg958 := flag.Arg(1)
+		mbTrans959 := thrift.NewTMemoryBufferLen(len(arg958))
+		defer mbTrans959.Close()
+		_, err960 := mbTrans959.WriteString(arg958)
+		if err960 != nil {
 			Usage()
 			return
 		}
-		factory1126 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1127 := factory1126.GetProtocol(mbTrans1124)
-		argvalue0 := cassandra.NewAuthenticationRequest()
-		err1128 := argvalue0.Read(jsProt1127)
-		if err1128 != nil {
+		factory961 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt962 := factory961.GetProtocol(mbTrans959)
+		argvalue0 := Cassandra.NewAuthenticationRequest()
+		err963 := argvalue0.Read(jsProt962)
+		if err963 != nil {
 			Usage()
 			return
 		}
@@ -181,19 +179,19 @@ func main() {
 		}
 		argvalue0 := flag.Arg(1)
 		value0 := argvalue0
-		arg1131 := flag.Arg(2)
-		mbTrans1132 := thrift.NewTMemoryBufferLen(len(arg1131))
-		defer mbTrans1132.Close()
-		_, err1133 := mbTrans1132.WriteString(arg1131)
-		if err1133 != nil {
+		arg966 := flag.Arg(2)
+		mbTrans967 := thrift.NewTMemoryBufferLen(len(arg966))
+		defer mbTrans967.Close()
+		_, err968 := mbTrans967.WriteString(arg966)
+		if err968 != nil {
 			Usage()
 			return
 		}
-		factory1134 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1135 := factory1134.GetProtocol(mbTrans1132)
-		argvalue1 := cassandra.NewColumnPath()
-		err1136 := argvalue1.Read(jsProt1135)
-		if err1136 != nil {
+		factory969 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt970 := factory969.GetProtocol(mbTrans967)
+		argvalue1 := Cassandra.NewColumnPath()
+		err971 := argvalue1.Read(jsProt970)
+		if err971 != nil {
 			Usage()
 			return
 		}
@@ -203,7 +201,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue2 := cassandra.ConsistencyLevel(tmp2)
+		argvalue2 := Cassandra.ConsistencyLevel(tmp2)
 		value2 := argvalue2
 		fmt.Print(client.Get(value0, value1, value2))
 		fmt.Print("\n")
@@ -215,36 +213,36 @@ func main() {
 		}
 		argvalue0 := flag.Arg(1)
 		value0 := argvalue0
-		arg1138 := flag.Arg(2)
-		mbTrans1139 := thrift.NewTMemoryBufferLen(len(arg1138))
-		defer mbTrans1139.Close()
-		_, err1140 := mbTrans1139.WriteString(arg1138)
-		if err1140 != nil {
+		arg973 := flag.Arg(2)
+		mbTrans974 := thrift.NewTMemoryBufferLen(len(arg973))
+		defer mbTrans974.Close()
+		_, err975 := mbTrans974.WriteString(arg973)
+		if err975 != nil {
 			Usage()
 			return
 		}
-		factory1141 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1142 := factory1141.GetProtocol(mbTrans1139)
-		argvalue1 := cassandra.NewColumnParent()
-		err1143 := argvalue1.Read(jsProt1142)
-		if err1143 != nil {
+		factory976 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt977 := factory976.GetProtocol(mbTrans974)
+		argvalue1 := Cassandra.NewColumnParent()
+		err978 := argvalue1.Read(jsProt977)
+		if err978 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1144 := flag.Arg(3)
-		mbTrans1145 := thrift.NewTMemoryBufferLen(len(arg1144))
-		defer mbTrans1145.Close()
-		_, err1146 := mbTrans1145.WriteString(arg1144)
-		if err1146 != nil {
+		arg979 := flag.Arg(3)
+		mbTrans980 := thrift.NewTMemoryBufferLen(len(arg979))
+		defer mbTrans980.Close()
+		_, err981 := mbTrans980.WriteString(arg979)
+		if err981 != nil {
 			Usage()
 			return
 		}
-		factory1147 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1148 := factory1147.GetProtocol(mbTrans1145)
-		argvalue2 := cassandra.NewSlicePredicate()
-		err1149 := argvalue2.Read(jsProt1148)
-		if err1149 != nil {
+		factory982 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt983 := factory982.GetProtocol(mbTrans980)
+		argvalue2 := Cassandra.NewSlicePredicate()
+		err984 := argvalue2.Read(jsProt983)
+		if err984 != nil {
 			Usage()
 			return
 		}
@@ -254,7 +252,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.GetSlice(value0, value1, value2, value3))
 		fmt.Print("\n")
@@ -266,36 +264,36 @@ func main() {
 		}
 		argvalue0 := flag.Arg(1)
 		value0 := argvalue0
-		arg1151 := flag.Arg(2)
-		mbTrans1152 := thrift.NewTMemoryBufferLen(len(arg1151))
-		defer mbTrans1152.Close()
-		_, err1153 := mbTrans1152.WriteString(arg1151)
-		if err1153 != nil {
+		arg986 := flag.Arg(2)
+		mbTrans987 := thrift.NewTMemoryBufferLen(len(arg986))
+		defer mbTrans987.Close()
+		_, err988 := mbTrans987.WriteString(arg986)
+		if err988 != nil {
 			Usage()
 			return
 		}
-		factory1154 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1155 := factory1154.GetProtocol(mbTrans1152)
-		argvalue1 := cassandra.NewColumnParent()
-		err1156 := argvalue1.Read(jsProt1155)
-		if err1156 != nil {
+		factory989 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt990 := factory989.GetProtocol(mbTrans987)
+		argvalue1 := Cassandra.NewColumnParent()
+		err991 := argvalue1.Read(jsProt990)
+		if err991 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1157 := flag.Arg(3)
-		mbTrans1158 := thrift.NewTMemoryBufferLen(len(arg1157))
-		defer mbTrans1158.Close()
-		_, err1159 := mbTrans1158.WriteString(arg1157)
-		if err1159 != nil {
+		arg992 := flag.Arg(3)
+		mbTrans993 := thrift.NewTMemoryBufferLen(len(arg992))
+		defer mbTrans993.Close()
+		_, err994 := mbTrans993.WriteString(arg992)
+		if err994 != nil {
 			Usage()
 			return
 		}
-		factory1160 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1161 := factory1160.GetProtocol(mbTrans1158)
-		argvalue2 := cassandra.NewSlicePredicate()
-		err1162 := argvalue2.Read(jsProt1161)
-		if err1162 != nil {
+		factory995 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt996 := factory995.GetProtocol(mbTrans993)
+		argvalue2 := Cassandra.NewSlicePredicate()
+		err997 := argvalue2.Read(jsProt996)
+		if err997 != nil {
 			Usage()
 			return
 		}
@@ -305,7 +303,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.GetCount(value0, value1, value2, value3))
 		fmt.Print("\n")
@@ -315,54 +313,54 @@ func main() {
 			fmt.Fprint(os.Stderr, "MultigetSlice requires 4 args\n")
 			flag.Usage()
 		}
-		arg1163 := flag.Arg(1)
-		mbTrans1164 := thrift.NewTMemoryBufferLen(len(arg1163))
-		defer mbTrans1164.Close()
-		_, err1165 := mbTrans1164.WriteString(arg1163)
-		if err1165 != nil {
+		arg998 := flag.Arg(1)
+		mbTrans999 := thrift.NewTMemoryBufferLen(len(arg998))
+		defer mbTrans999.Close()
+		_, err1000 := mbTrans999.WriteString(arg998)
+		if err1000 != nil {
 			Usage()
 			return
 		}
-		factory1166 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1167 := factory1166.GetProtocol(mbTrans1164)
-		containerStruct0 := cassandra.NewMultigetSliceArgs()
-		err1168 := containerStruct0.ReadField1(jsProt1167)
-		if err1168 != nil {
+		factory1001 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1002 := factory1001.GetProtocol(mbTrans999)
+		containerStruct0 := Cassandra.NewMultigetSliceArgs()
+		err1003 := containerStruct0.ReadField1(jsProt1002)
+		if err1003 != nil {
 			Usage()
 			return
 		}
 		argvalue0 := containerStruct0.Keys
 		value0 := argvalue0
-		arg1169 := flag.Arg(2)
-		mbTrans1170 := thrift.NewTMemoryBufferLen(len(arg1169))
-		defer mbTrans1170.Close()
-		_, err1171 := mbTrans1170.WriteString(arg1169)
-		if err1171 != nil {
+		arg1004 := flag.Arg(2)
+		mbTrans1005 := thrift.NewTMemoryBufferLen(len(arg1004))
+		defer mbTrans1005.Close()
+		_, err1006 := mbTrans1005.WriteString(arg1004)
+		if err1006 != nil {
 			Usage()
 			return
 		}
-		factory1172 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1173 := factory1172.GetProtocol(mbTrans1170)
-		argvalue1 := cassandra.NewColumnParent()
-		err1174 := argvalue1.Read(jsProt1173)
-		if err1174 != nil {
+		factory1007 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1008 := factory1007.GetProtocol(mbTrans1005)
+		argvalue1 := Cassandra.NewColumnParent()
+		err1009 := argvalue1.Read(jsProt1008)
+		if err1009 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1175 := flag.Arg(3)
-		mbTrans1176 := thrift.NewTMemoryBufferLen(len(arg1175))
-		defer mbTrans1176.Close()
-		_, err1177 := mbTrans1176.WriteString(arg1175)
-		if err1177 != nil {
+		arg1010 := flag.Arg(3)
+		mbTrans1011 := thrift.NewTMemoryBufferLen(len(arg1010))
+		defer mbTrans1011.Close()
+		_, err1012 := mbTrans1011.WriteString(arg1010)
+		if err1012 != nil {
 			Usage()
 			return
 		}
-		factory1178 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1179 := factory1178.GetProtocol(mbTrans1176)
-		argvalue2 := cassandra.NewSlicePredicate()
-		err1180 := argvalue2.Read(jsProt1179)
-		if err1180 != nil {
+		factory1013 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1014 := factory1013.GetProtocol(mbTrans1011)
+		argvalue2 := Cassandra.NewSlicePredicate()
+		err1015 := argvalue2.Read(jsProt1014)
+		if err1015 != nil {
 			Usage()
 			return
 		}
@@ -372,7 +370,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.MultigetSlice(value0, value1, value2, value3))
 		fmt.Print("\n")
@@ -382,54 +380,54 @@ func main() {
 			fmt.Fprint(os.Stderr, "MultigetCount requires 4 args\n")
 			flag.Usage()
 		}
-		arg1181 := flag.Arg(1)
-		mbTrans1182 := thrift.NewTMemoryBufferLen(len(arg1181))
-		defer mbTrans1182.Close()
-		_, err1183 := mbTrans1182.WriteString(arg1181)
-		if err1183 != nil {
+		arg1016 := flag.Arg(1)
+		mbTrans1017 := thrift.NewTMemoryBufferLen(len(arg1016))
+		defer mbTrans1017.Close()
+		_, err1018 := mbTrans1017.WriteString(arg1016)
+		if err1018 != nil {
 			Usage()
 			return
 		}
-		factory1184 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1185 := factory1184.GetProtocol(mbTrans1182)
-		containerStruct0 := cassandra.NewMultigetCountArgs()
-		err1186 := containerStruct0.ReadField1(jsProt1185)
-		if err1186 != nil {
+		factory1019 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1020 := factory1019.GetProtocol(mbTrans1017)
+		containerStruct0 := Cassandra.NewMultigetCountArgs()
+		err1021 := containerStruct0.ReadField1(jsProt1020)
+		if err1021 != nil {
 			Usage()
 			return
 		}
 		argvalue0 := containerStruct0.Keys
 		value0 := argvalue0
-		arg1187 := flag.Arg(2)
-		mbTrans1188 := thrift.NewTMemoryBufferLen(len(arg1187))
-		defer mbTrans1188.Close()
-		_, err1189 := mbTrans1188.WriteString(arg1187)
-		if err1189 != nil {
+		arg1022 := flag.Arg(2)
+		mbTrans1023 := thrift.NewTMemoryBufferLen(len(arg1022))
+		defer mbTrans1023.Close()
+		_, err1024 := mbTrans1023.WriteString(arg1022)
+		if err1024 != nil {
 			Usage()
 			return
 		}
-		factory1190 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1191 := factory1190.GetProtocol(mbTrans1188)
-		argvalue1 := cassandra.NewColumnParent()
-		err1192 := argvalue1.Read(jsProt1191)
-		if err1192 != nil {
+		factory1025 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1026 := factory1025.GetProtocol(mbTrans1023)
+		argvalue1 := Cassandra.NewColumnParent()
+		err1027 := argvalue1.Read(jsProt1026)
+		if err1027 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1193 := flag.Arg(3)
-		mbTrans1194 := thrift.NewTMemoryBufferLen(len(arg1193))
-		defer mbTrans1194.Close()
-		_, err1195 := mbTrans1194.WriteString(arg1193)
-		if err1195 != nil {
+		arg1028 := flag.Arg(3)
+		mbTrans1029 := thrift.NewTMemoryBufferLen(len(arg1028))
+		defer mbTrans1029.Close()
+		_, err1030 := mbTrans1029.WriteString(arg1028)
+		if err1030 != nil {
 			Usage()
 			return
 		}
-		factory1196 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1197 := factory1196.GetProtocol(mbTrans1194)
-		argvalue2 := cassandra.NewSlicePredicate()
-		err1198 := argvalue2.Read(jsProt1197)
-		if err1198 != nil {
+		factory1031 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1032 := factory1031.GetProtocol(mbTrans1029)
+		argvalue2 := Cassandra.NewSlicePredicate()
+		err1033 := argvalue2.Read(jsProt1032)
+		if err1033 != nil {
 			Usage()
 			return
 		}
@@ -439,7 +437,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.MultigetCount(value0, value1, value2, value3))
 		fmt.Print("\n")
@@ -449,53 +447,53 @@ func main() {
 			fmt.Fprint(os.Stderr, "GetRangeSlices requires 4 args\n")
 			flag.Usage()
 		}
-		arg1199 := flag.Arg(1)
-		mbTrans1200 := thrift.NewTMemoryBufferLen(len(arg1199))
-		defer mbTrans1200.Close()
-		_, err1201 := mbTrans1200.WriteString(arg1199)
-		if err1201 != nil {
+		arg1034 := flag.Arg(1)
+		mbTrans1035 := thrift.NewTMemoryBufferLen(len(arg1034))
+		defer mbTrans1035.Close()
+		_, err1036 := mbTrans1035.WriteString(arg1034)
+		if err1036 != nil {
 			Usage()
 			return
 		}
-		factory1202 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1203 := factory1202.GetProtocol(mbTrans1200)
-		argvalue0 := cassandra.NewColumnParent()
-		err1204 := argvalue0.Read(jsProt1203)
-		if err1204 != nil {
+		factory1037 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1038 := factory1037.GetProtocol(mbTrans1035)
+		argvalue0 := Cassandra.NewColumnParent()
+		err1039 := argvalue0.Read(jsProt1038)
+		if err1039 != nil {
 			Usage()
 			return
 		}
 		value0 := argvalue0
-		arg1205 := flag.Arg(2)
-		mbTrans1206 := thrift.NewTMemoryBufferLen(len(arg1205))
-		defer mbTrans1206.Close()
-		_, err1207 := mbTrans1206.WriteString(arg1205)
-		if err1207 != nil {
+		arg1040 := flag.Arg(2)
+		mbTrans1041 := thrift.NewTMemoryBufferLen(len(arg1040))
+		defer mbTrans1041.Close()
+		_, err1042 := mbTrans1041.WriteString(arg1040)
+		if err1042 != nil {
 			Usage()
 			return
 		}
-		factory1208 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1209 := factory1208.GetProtocol(mbTrans1206)
-		argvalue1 := cassandra.NewSlicePredicate()
-		err1210 := argvalue1.Read(jsProt1209)
-		if err1210 != nil {
+		factory1043 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1044 := factory1043.GetProtocol(mbTrans1041)
+		argvalue1 := Cassandra.NewSlicePredicate()
+		err1045 := argvalue1.Read(jsProt1044)
+		if err1045 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1211 := flag.Arg(3)
-		mbTrans1212 := thrift.NewTMemoryBufferLen(len(arg1211))
-		defer mbTrans1212.Close()
-		_, err1213 := mbTrans1212.WriteString(arg1211)
-		if err1213 != nil {
+		arg1046 := flag.Arg(3)
+		mbTrans1047 := thrift.NewTMemoryBufferLen(len(arg1046))
+		defer mbTrans1047.Close()
+		_, err1048 := mbTrans1047.WriteString(arg1046)
+		if err1048 != nil {
 			Usage()
 			return
 		}
-		factory1214 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1215 := factory1214.GetProtocol(mbTrans1212)
-		argvalue2 := cassandra.NewKeyRange()
-		err1216 := argvalue2.Read(jsProt1215)
-		if err1216 != nil {
+		factory1049 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1050 := factory1049.GetProtocol(mbTrans1047)
+		argvalue2 := Cassandra.NewKeyRange()
+		err1051 := argvalue2.Read(jsProt1050)
+		if err1051 != nil {
 			Usage()
 			return
 		}
@@ -505,7 +503,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.GetRangeSlices(value0, value1, value2, value3))
 		fmt.Print("\n")
@@ -515,53 +513,53 @@ func main() {
 			fmt.Fprint(os.Stderr, "GetIndexedSlices requires 4 args\n")
 			flag.Usage()
 		}
-		arg1217 := flag.Arg(1)
-		mbTrans1218 := thrift.NewTMemoryBufferLen(len(arg1217))
-		defer mbTrans1218.Close()
-		_, err1219 := mbTrans1218.WriteString(arg1217)
-		if err1219 != nil {
+		arg1052 := flag.Arg(1)
+		mbTrans1053 := thrift.NewTMemoryBufferLen(len(arg1052))
+		defer mbTrans1053.Close()
+		_, err1054 := mbTrans1053.WriteString(arg1052)
+		if err1054 != nil {
 			Usage()
 			return
 		}
-		factory1220 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1221 := factory1220.GetProtocol(mbTrans1218)
-		argvalue0 := cassandra.NewColumnParent()
-		err1222 := argvalue0.Read(jsProt1221)
-		if err1222 != nil {
+		factory1055 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1056 := factory1055.GetProtocol(mbTrans1053)
+		argvalue0 := Cassandra.NewColumnParent()
+		err1057 := argvalue0.Read(jsProt1056)
+		if err1057 != nil {
 			Usage()
 			return
 		}
 		value0 := argvalue0
-		arg1223 := flag.Arg(2)
-		mbTrans1224 := thrift.NewTMemoryBufferLen(len(arg1223))
-		defer mbTrans1224.Close()
-		_, err1225 := mbTrans1224.WriteString(arg1223)
-		if err1225 != nil {
+		arg1058 := flag.Arg(2)
+		mbTrans1059 := thrift.NewTMemoryBufferLen(len(arg1058))
+		defer mbTrans1059.Close()
+		_, err1060 := mbTrans1059.WriteString(arg1058)
+		if err1060 != nil {
 			Usage()
 			return
 		}
-		factory1226 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1227 := factory1226.GetProtocol(mbTrans1224)
-		argvalue1 := cassandra.NewIndexClause()
-		err1228 := argvalue1.Read(jsProt1227)
-		if err1228 != nil {
+		factory1061 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1062 := factory1061.GetProtocol(mbTrans1059)
+		argvalue1 := Cassandra.NewIndexClause()
+		err1063 := argvalue1.Read(jsProt1062)
+		if err1063 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1229 := flag.Arg(3)
-		mbTrans1230 := thrift.NewTMemoryBufferLen(len(arg1229))
-		defer mbTrans1230.Close()
-		_, err1231 := mbTrans1230.WriteString(arg1229)
-		if err1231 != nil {
+		arg1064 := flag.Arg(3)
+		mbTrans1065 := thrift.NewTMemoryBufferLen(len(arg1064))
+		defer mbTrans1065.Close()
+		_, err1066 := mbTrans1065.WriteString(arg1064)
+		if err1066 != nil {
 			Usage()
 			return
 		}
-		factory1232 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1233 := factory1232.GetProtocol(mbTrans1230)
-		argvalue2 := cassandra.NewSlicePredicate()
-		err1234 := argvalue2.Read(jsProt1233)
-		if err1234 != nil {
+		factory1067 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1068 := factory1067.GetProtocol(mbTrans1065)
+		argvalue2 := Cassandra.NewSlicePredicate()
+		err1069 := argvalue2.Read(jsProt1068)
+		if err1069 != nil {
 			Usage()
 			return
 		}
@@ -571,7 +569,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.GetIndexedSlices(value0, value1, value2, value3))
 		fmt.Print("\n")
@@ -583,36 +581,36 @@ func main() {
 		}
 		argvalue0 := flag.Arg(1)
 		value0 := argvalue0
-		arg1236 := flag.Arg(2)
-		mbTrans1237 := thrift.NewTMemoryBufferLen(len(arg1236))
-		defer mbTrans1237.Close()
-		_, err1238 := mbTrans1237.WriteString(arg1236)
-		if err1238 != nil {
+		arg1071 := flag.Arg(2)
+		mbTrans1072 := thrift.NewTMemoryBufferLen(len(arg1071))
+		defer mbTrans1072.Close()
+		_, err1073 := mbTrans1072.WriteString(arg1071)
+		if err1073 != nil {
 			Usage()
 			return
 		}
-		factory1239 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1240 := factory1239.GetProtocol(mbTrans1237)
-		argvalue1 := cassandra.NewColumnParent()
-		err1241 := argvalue1.Read(jsProt1240)
-		if err1241 != nil {
+		factory1074 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1075 := factory1074.GetProtocol(mbTrans1072)
+		argvalue1 := Cassandra.NewColumnParent()
+		err1076 := argvalue1.Read(jsProt1075)
+		if err1076 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		arg1242 := flag.Arg(3)
-		mbTrans1243 := thrift.NewTMemoryBufferLen(len(arg1242))
-		defer mbTrans1243.Close()
-		_, err1244 := mbTrans1243.WriteString(arg1242)
-		if err1244 != nil {
+		arg1077 := flag.Arg(3)
+		mbTrans1078 := thrift.NewTMemoryBufferLen(len(arg1077))
+		defer mbTrans1078.Close()
+		_, err1079 := mbTrans1078.WriteString(arg1077)
+		if err1079 != nil {
 			Usage()
 			return
 		}
-		factory1245 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1246 := factory1245.GetProtocol(mbTrans1243)
-		argvalue2 := cassandra.NewColumn()
-		err1247 := argvalue2.Read(jsProt1246)
-		if err1247 != nil {
+		factory1080 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1081 := factory1080.GetProtocol(mbTrans1078)
+		argvalue2 := Cassandra.NewColumn()
+		err1082 := argvalue2.Read(jsProt1081)
+		if err1082 != nil {
 			Usage()
 			return
 		}
@@ -622,60 +620,9 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.Insert(value0, value1, value2, value3))
-		fmt.Print("\n")
-		break
-	case "add":
-		if flag.NArg()-1 != 4 {
-			fmt.Fprint(os.Stderr, "Add requires 4 args\n")
-			flag.Usage()
-		}
-		argvalue0 := flag.Arg(1)
-		value0 := argvalue0
-		arg1249 := flag.Arg(2)
-		mbTrans1250 := thrift.NewTMemoryBufferLen(len(arg1249))
-		defer mbTrans1250.Close()
-		_, err1251 := mbTrans1250.WriteString(arg1249)
-		if err1251 != nil {
-			Usage()
-			return
-		}
-		factory1252 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1253 := factory1252.GetProtocol(mbTrans1250)
-		argvalue1 := cassandra.NewColumnParent()
-		err1254 := argvalue1.Read(jsProt1253)
-		if err1254 != nil {
-			Usage()
-			return
-		}
-		value1 := argvalue1
-		arg1255 := flag.Arg(3)
-		mbTrans1256 := thrift.NewTMemoryBufferLen(len(arg1255))
-		defer mbTrans1256.Close()
-		_, err1257 := mbTrans1256.WriteString(arg1255)
-		if err1257 != nil {
-			Usage()
-			return
-		}
-		factory1258 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1259 := factory1258.GetProtocol(mbTrans1256)
-		argvalue2 := cassandra.NewCounterColumn()
-		err1260 := argvalue2.Read(jsProt1259)
-		if err1260 != nil {
-			Usage()
-			return
-		}
-		value2 := argvalue2
-		tmp3, err := (strconv.Atoi(flag.Arg(4)))
-		if err != nil {
-			Usage()
-			return
-		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
-		value3 := argvalue3
-		fmt.Print(client.Add(value0, value1, value2, value3))
 		fmt.Print("\n")
 		break
 	case "remove":
@@ -685,25 +632,25 @@ func main() {
 		}
 		argvalue0 := flag.Arg(1)
 		value0 := argvalue0
-		arg1262 := flag.Arg(2)
-		mbTrans1263 := thrift.NewTMemoryBufferLen(len(arg1262))
-		defer mbTrans1263.Close()
-		_, err1264 := mbTrans1263.WriteString(arg1262)
-		if err1264 != nil {
+		arg1084 := flag.Arg(2)
+		mbTrans1085 := thrift.NewTMemoryBufferLen(len(arg1084))
+		defer mbTrans1085.Close()
+		_, err1086 := mbTrans1085.WriteString(arg1084)
+		if err1086 != nil {
 			Usage()
 			return
 		}
-		factory1265 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1266 := factory1265.GetProtocol(mbTrans1263)
-		argvalue1 := cassandra.NewColumnPath()
-		err1267 := argvalue1.Read(jsProt1266)
-		if err1267 != nil {
+		factory1087 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1088 := factory1087.GetProtocol(mbTrans1085)
+		argvalue1 := Cassandra.NewColumnPath()
+		err1089 := argvalue1.Read(jsProt1088)
+		if err1089 != nil {
 			Usage()
 			return
 		}
 		value1 := argvalue1
-		argvalue2, err1268 := (strconv.Atoi64(flag.Arg(3)))
-		if err1268 != nil {
+		argvalue2, err1090 := (strconv.ParseInt(flag.Arg(3), 10, 64))
+		if err1090 != nil {
 			Usage()
 			return
 		}
@@ -713,43 +660,9 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue3 := cassandra.ConsistencyLevel(tmp3)
+		argvalue3 := Cassandra.ConsistencyLevel(tmp3)
 		value3 := argvalue3
 		fmt.Print(client.Remove(value0, value1, value2, value3))
-		fmt.Print("\n")
-		break
-	case "remove_counter":
-		if flag.NArg()-1 != 3 {
-			fmt.Fprint(os.Stderr, "RemoveCounter requires 3 args\n")
-			flag.Usage()
-		}
-		argvalue0 := flag.Arg(1)
-		value0 := argvalue0
-		arg1270 := flag.Arg(2)
-		mbTrans1271 := thrift.NewTMemoryBufferLen(len(arg1270))
-		defer mbTrans1271.Close()
-		_, err1272 := mbTrans1271.WriteString(arg1270)
-		if err1272 != nil {
-			Usage()
-			return
-		}
-		factory1273 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1274 := factory1273.GetProtocol(mbTrans1271)
-		argvalue1 := cassandra.NewColumnPath()
-		err1275 := argvalue1.Read(jsProt1274)
-		if err1275 != nil {
-			Usage()
-			return
-		}
-		value1 := argvalue1
-		tmp2, err := (strconv.Atoi(flag.Arg(3)))
-		if err != nil {
-			Usage()
-			return
-		}
-		argvalue2 := cassandra.ConsistencyLevel(tmp2)
-		value2 := argvalue2
-		fmt.Print(client.RemoveCounter(value0, value1, value2))
 		fmt.Print("\n")
 		break
 	case "batch_mutate":
@@ -757,19 +670,19 @@ func main() {
 			fmt.Fprint(os.Stderr, "BatchMutate requires 2 args\n")
 			flag.Usage()
 		}
-		arg1276 := flag.Arg(1)
-		mbTrans1277 := thrift.NewTMemoryBufferLen(len(arg1276))
-		defer mbTrans1277.Close()
-		_, err1278 := mbTrans1277.WriteString(arg1276)
-		if err1278 != nil {
+		arg1091 := flag.Arg(1)
+		mbTrans1092 := thrift.NewTMemoryBufferLen(len(arg1091))
+		defer mbTrans1092.Close()
+		_, err1093 := mbTrans1092.WriteString(arg1091)
+		if err1093 != nil {
 			Usage()
 			return
 		}
-		factory1279 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1280 := factory1279.GetProtocol(mbTrans1277)
-		containerStruct0 := cassandra.NewBatchMutateArgs()
-		err1281 := containerStruct0.ReadField1(jsProt1280)
-		if err1281 != nil {
+		factory1094 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1095 := factory1094.GetProtocol(mbTrans1092)
+		containerStruct0 := Cassandra.NewBatchMutateArgs()
+		err1096 := containerStruct0.ReadField1(jsProt1095)
+		if err1096 != nil {
 			Usage()
 			return
 		}
@@ -780,7 +693,7 @@ func main() {
 			Usage()
 			return
 		}
-		argvalue1 := cassandra.ConsistencyLevel(tmp1)
+		argvalue1 := Cassandra.ConsistencyLevel(tmp1)
 		value1 := argvalue1
 		fmt.Print(client.BatchMutate(value0, value1))
 		fmt.Print("\n")
@@ -874,8 +787,8 @@ func main() {
 		value1 := argvalue1
 		argvalue2 := flag.Arg(3)
 		value2 := argvalue2
-		tmp3, err1288 := (strconv.Atoi(flag.Arg(4)))
-		if err1288 != nil {
+		tmp3, err1103 := (strconv.Atoi(flag.Arg(4)))
+		if err1103 != nil {
 			Usage()
 			return
 		}
@@ -889,19 +802,19 @@ func main() {
 			fmt.Fprint(os.Stderr, "SystemAddColumnFamily requires 1 args\n")
 			flag.Usage()
 		}
-		arg1289 := flag.Arg(1)
-		mbTrans1290 := thrift.NewTMemoryBufferLen(len(arg1289))
-		defer mbTrans1290.Close()
-		_, err1291 := mbTrans1290.WriteString(arg1289)
-		if err1291 != nil {
+		arg1104 := flag.Arg(1)
+		mbTrans1105 := thrift.NewTMemoryBufferLen(len(arg1104))
+		defer mbTrans1105.Close()
+		_, err1106 := mbTrans1105.WriteString(arg1104)
+		if err1106 != nil {
 			Usage()
 			return
 		}
-		factory1292 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1293 := factory1292.GetProtocol(mbTrans1290)
-		argvalue0 := cassandra.NewCfDef()
-		err1294 := argvalue0.Read(jsProt1293)
-		if err1294 != nil {
+		factory1107 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1108 := factory1107.GetProtocol(mbTrans1105)
+		argvalue0 := Cassandra.NewCfDef()
+		err1109 := argvalue0.Read(jsProt1108)
+		if err1109 != nil {
 			Usage()
 			return
 		}
@@ -924,19 +837,19 @@ func main() {
 			fmt.Fprint(os.Stderr, "SystemAddKeyspace requires 1 args\n")
 			flag.Usage()
 		}
-		arg1296 := flag.Arg(1)
-		mbTrans1297 := thrift.NewTMemoryBufferLen(len(arg1296))
-		defer mbTrans1297.Close()
-		_, err1298 := mbTrans1297.WriteString(arg1296)
-		if err1298 != nil {
+		arg1111 := flag.Arg(1)
+		mbTrans1112 := thrift.NewTMemoryBufferLen(len(arg1111))
+		defer mbTrans1112.Close()
+		_, err1113 := mbTrans1112.WriteString(arg1111)
+		if err1113 != nil {
 			Usage()
 			return
 		}
-		factory1299 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1300 := factory1299.GetProtocol(mbTrans1297)
-		argvalue0 := cassandra.NewKsDef()
-		err1301 := argvalue0.Read(jsProt1300)
-		if err1301 != nil {
+		factory1114 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1115 := factory1114.GetProtocol(mbTrans1112)
+		argvalue0 := Cassandra.NewKsDef()
+		err1116 := argvalue0.Read(jsProt1115)
+		if err1116 != nil {
 			Usage()
 			return
 		}
@@ -959,19 +872,19 @@ func main() {
 			fmt.Fprint(os.Stderr, "SystemUpdateKeyspace requires 1 args\n")
 			flag.Usage()
 		}
-		arg1303 := flag.Arg(1)
-		mbTrans1304 := thrift.NewTMemoryBufferLen(len(arg1303))
-		defer mbTrans1304.Close()
-		_, err1305 := mbTrans1304.WriteString(arg1303)
-		if err1305 != nil {
+		arg1118 := flag.Arg(1)
+		mbTrans1119 := thrift.NewTMemoryBufferLen(len(arg1118))
+		defer mbTrans1119.Close()
+		_, err1120 := mbTrans1119.WriteString(arg1118)
+		if err1120 != nil {
 			Usage()
 			return
 		}
-		factory1306 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1307 := factory1306.GetProtocol(mbTrans1304)
-		argvalue0 := cassandra.NewKsDef()
-		err1308 := argvalue0.Read(jsProt1307)
-		if err1308 != nil {
+		factory1121 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1122 := factory1121.GetProtocol(mbTrans1119)
+		argvalue0 := Cassandra.NewKsDef()
+		err1123 := argvalue0.Read(jsProt1122)
+		if err1123 != nil {
 			Usage()
 			return
 		}
@@ -984,41 +897,24 @@ func main() {
 			fmt.Fprint(os.Stderr, "SystemUpdateColumnFamily requires 1 args\n")
 			flag.Usage()
 		}
-		arg1309 := flag.Arg(1)
-		mbTrans1310 := thrift.NewTMemoryBufferLen(len(arg1309))
-		defer mbTrans1310.Close()
-		_, err1311 := mbTrans1310.WriteString(arg1309)
-		if err1311 != nil {
+		arg1124 := flag.Arg(1)
+		mbTrans1125 := thrift.NewTMemoryBufferLen(len(arg1124))
+		defer mbTrans1125.Close()
+		_, err1126 := mbTrans1125.WriteString(arg1124)
+		if err1126 != nil {
 			Usage()
 			return
 		}
-		factory1312 := thrift.NewTSimpleJSONProtocolFactory()
-		jsProt1313 := factory1312.GetProtocol(mbTrans1310)
-		argvalue0 := cassandra.NewCfDef()
-		err1314 := argvalue0.Read(jsProt1313)
-		if err1314 != nil {
+		factory1127 := thrift.NewTSimpleJSONProtocolFactory()
+		jsProt1128 := factory1127.GetProtocol(mbTrans1125)
+		argvalue0 := Cassandra.NewCfDef()
+		err1129 := argvalue0.Read(jsProt1128)
+		if err1129 != nil {
 			Usage()
 			return
 		}
 		value0 := argvalue0
 		fmt.Print(client.SystemUpdateColumnFamily(value0))
-		fmt.Print("\n")
-		break
-	case "execute_cql_query":
-		if flag.NArg()-1 != 2 {
-			fmt.Fprint(os.Stderr, "ExecuteCqlQuery requires 2 args\n")
-			flag.Usage()
-		}
-		argvalue0 := flag.Arg(1)
-		value0 := argvalue0
-		tmp1, err := (strconv.Atoi(flag.Arg(2)))
-		if err != nil {
-			Usage()
-			return
-		}
-		argvalue1 := cassandra.Compression(tmp1)
-		value1 := argvalue1
-		fmt.Print(client.ExecuteCqlQuery(value0, value1))
 		fmt.Print("\n")
 		break
 	case "":
